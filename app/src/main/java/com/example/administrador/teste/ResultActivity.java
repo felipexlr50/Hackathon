@@ -23,6 +23,7 @@ import com.jjoe64.graphview.Viewport;
 import com.jjoe64.graphview.series.BarGraphSeries;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
+import com.jjoe64.graphview.series.Series;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -39,7 +40,7 @@ public class ResultActivity extends AppCompatActivity {
     String idMedico;
     String idProntuarios;
 
-     TextView nome;
+
     private Viewport viewTemp;
     private Viewport viewUmidade;
 
@@ -53,10 +54,10 @@ public class ResultActivity extends AppCompatActivity {
     private GraphView graphTemp;
     private GraphView graphUmidade;
 
-
-     TextView sobrenome;
-     TextView idade;
-     TextView CID;
+    private TextView nome;
+    private TextView sobrenome;
+    private TextView idade;
+    private TextView CID;
     String nome2, sobrenome2,idade2,CID2;
 
 
@@ -77,8 +78,8 @@ public class ResultActivity extends AppCompatActivity {
 
         Intent getValue = getIntent();
         nome = (TextView) findViewById(R.id.textView4);
-        sobrenome = (TextView) findViewById(R.id.textView5);
-        idade = (TextView) findViewById(R.id.textView6);
+        sobrenome = (TextView) findViewById(R.id.textView4);
+        idade = (TextView) findViewById(R.id.textView5);
         CID = (TextView) findViewById(R.id.textView8);
 
 
@@ -103,6 +104,8 @@ public class ResultActivity extends AppCompatActivity {
     }
 
     private void pegarDados(String url){
+
+
         RequestQueue queue = Volley.newRequestQueue(this);
 
 
@@ -111,24 +114,36 @@ public class ResultActivity extends AppCompatActivity {
                     @Override
                     public void onResponse(String response) {
                         Log.d("reaponse",response);
+                        Log.d("prontuario2",response);
                         try {
-                            Date data = new Date();
+
 
                             JSONObject json = new JSONObject(response);
                             JSONArray jarray = json.getJSONArray("prontuario");
+                            SimpleDateFormat df2 = new SimpleDateFormat("dd/MM/yy");
 
                             for (int i = 0; i < jarray.length(); i++) {
                                 JSONObject oneObject = jarray.getJSONObject(i);
                                nome2 = oneObject.getString("nome");
+                                Log.i("testeJason",oneObject.getString("nome"));
                                 sobrenome2 = oneObject.getString("sobrenome");
-                               idade2 = oneObject.getString("datahora");
+                                Log.i("testeVariavel",nome2);
+                              idade2 = df2.parse(oneObject.getString("datahora")).toString();
                                CID2 = oneObject.getString("diagnostico");
+
+
+                                nome.setText(nome2);
+                                sobrenome.setText(sobrenome2);
+                                idade.setText(idade2);
+                                CID.setText(CID2);
 
                             }
 
 
                         } catch (JSONException e) {
 
+                        } catch (ParseException e) {
+                            e.printStackTrace();
                         }
 
                     }
@@ -152,6 +167,7 @@ public class ResultActivity extends AppCompatActivity {
         seriesTempEx = new LineGraphSeries<DataPoint>();
         graphTemp.addSeries(seriesTempIn);
         graphTemp.addSeries(seriesTempEx);
+        dadosGrafico("http://192.168.1.4/medical/app/api/prontuario_mobile/getProntuario/"+idProntuarios);
         graphTemp.setTitle("Grafico de Temperatura");
         graphTemp.getGridLabelRenderer().setHorizontalAxisTitle("Tempo horas");
         graphTemp.getGridLabelRenderer().setVerticalAxisTitle("Temperatura Celcius");
@@ -161,18 +177,17 @@ public class ResultActivity extends AppCompatActivity {
         seriesTempEx.setTitle("Temp Ambiente");
         graphTemp.getLegendRenderer().setVisible(true);
         graphTemp.getLegendRenderer().setAlign(LegendRenderer.LegendAlign.TOP);
+        graphTemp.getGridLabelRenderer().setNumHorizontalLabels(3);
 
-        for(int i = 1;i<=24;i++){
-            seriesTempIn.appendData(new DataPoint(i,i+new Random().nextInt(40)),true,24);
-            seriesTempEx.appendData(new DataPoint(i,i+new Random().nextInt(50)),true,24);
-        }
 
         viewTemp = graphTemp.getViewport();
         viewTemp.setYAxisBoundsManual(true);
         viewTemp.setMaxY(50);
-        viewTemp.setMinX(0);
+
         viewTemp.setMinY(0);
-        viewTemp.setMaxX(24);
+
+
+
 
     }
 
@@ -180,22 +195,125 @@ public class ResultActivity extends AppCompatActivity {
         graphUmidade = (GraphView) findViewById(R.id.graphUmidade);
         seriesUmidade = new LineGraphSeries<DataPoint>();
         graphUmidade.addSeries(seriesUmidade);
+        dadosGrafico2("http://192.168.1.4/medical/app/api/prontuario_mobile/getProntuario/"+idProntuarios);
         graphUmidade.setTitle("Grafico de Temperatura");
         graphUmidade.getGridLabelRenderer().setHorizontalAxisTitle("Tempo horas");
         graphUmidade.getGridLabelRenderer().setVerticalAxisTitle("Umidade (%)");
 
+        graphUmidade.getGridLabelRenderer().setNumHorizontalLabels(5);
 
 
-        for(int i = 1;i<=24;i++){
-            seriesUmidade.appendData(new DataPoint(i,i+new Random().nextInt(100)),true,24);
-        }
 
         viewUmidade = graphUmidade.getViewport();
         viewUmidade.setYAxisBoundsManual(true);
         viewUmidade.setMaxY(100);
-        viewUmidade.setMinX(0);
+
+
         viewUmidade.setMinY(0);
-        viewUmidade.setMaxX(24);
+
+
+
+    }
+
+
+    public void dadosGrafico(String url){
+
+
+        RequestQueue queue = Volley.newRequestQueue(this);
+
+
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+
+                        try {
+
+
+                            JSONObject json = new JSONObject(response);
+                            JSONArray jarray = json.getJSONArray("sensores");
+                            SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss");
+
+                            for (int i = 0; i < jarray.length(); i++) {
+                                JSONObject oneObject = jarray.getJSONObject(i);
+                                double tempIn = oneObject.getDouble("temperatura");
+                                double tempOut = oneObject.getDouble("temperatura_externa");
+                                Date hora = df.parse(oneObject.getString("datahora"));
+                                seriesTempIn.appendData(new DataPoint(hora, tempIn),true,10);
+                                seriesTempEx.appendData(new DataPoint(hora,tempOut),true,10);
+
+
+                            }
+
+
+                        } catch (JSONException e) {
+
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+
+            }
+        });
+
+        queue.add(stringRequest);
+
+
+
+    }
+
+
+    public void dadosGrafico2(String url){
+
+
+        RequestQueue queue = Volley.newRequestQueue(this);
+
+
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+
+                        try {
+
+
+                            JSONObject json = new JSONObject(response);
+                            JSONArray jarray = json.getJSONArray("sensores");
+                            SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss");
+
+                            for (int i = 0; i < jarray.length(); i++) {
+                                JSONObject oneObject = jarray.getJSONObject(i);
+                                double tempIn = oneObject.getDouble("umidade");
+
+                                Date hora = df.parse(oneObject.getString("datahora"));
+                                seriesUmidade.appendData(new DataPoint(hora, tempIn),true,10);
+
+
+
+                            }
+
+
+                        } catch (JSONException e) {
+
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+
+            }
+        });
+
+        queue.add(stringRequest);
+
+
 
     }
 

@@ -15,8 +15,7 @@
     <ScrollView
         android:id="@+id/login_form"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        style="@style/AppTheme.AppBarOverlay">
+        android:layout_height="match_parent">
 
         <LinearLayout
             android:id="@+id/loginForm"
@@ -35,7 +34,7 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:id="@+id/txtCRM"
-                android:hint="CRM" />
+                android:hint="E-mail" />
 
             <android.support.design.widget.TextInputLayout
                 android:layout_width="match_parent"
